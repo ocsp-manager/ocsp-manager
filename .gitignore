@@ -1,0 +1,30 @@
+.env
+
+/.php-cs-fixer.cache
+
+# eclipse
+/.project
+/.settings
+
+# do not store the PHPStorm files
+/.idea*
+
+/.buildpath
+releases
+phar-builder.phar
+
+# composer
+/composer.phar
+/vendor
+
+# code style
+/php-cs-fixer.phar
+.php_cs.cache
+
+ignore
+
+/dev
+
+# always keep .keep files around
+!.keep
+

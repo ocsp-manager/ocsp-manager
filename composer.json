@@ -1,0 +1,61 @@
+{
+    "name": "ocsp-manager/ocsp-manager",
+    "type": "project",
+    "description": "manager ocsp data with kubernetes",
+    "license": "MIT",
+    "keywords": ["kubernetes", "api", "client", "k8s", "php", "controller", "ocsp", "ocsp-manager", "ocspmanager", "tls", "ssl", "cert-manager", "certmanager"],
+    "homepage": "https://github.com/ocsp-manager/ocsp-manager/",
+    "authors": [
+        {
+            "name" : "Travis Glenn Hansen"
+        }
+    ],
+    "require": {
+        "php": ">=8.2.0",
+        "ext-bz2": "*",
+        "ext-openssl": "*",
+        "travisghansen/kubernetes-controller-php": "^0.1.8",
+        "mlocati/ocsp": "^1.1",
+        "guzzlehttp/guzzle": "^7.0",
+        "cash/lrucache": "^1.0",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "autoload": {
+        "psr-0": {"OcspManager\\": "src/"}
+    },
+    "scripts": {
+        "buildphar": [
+            "@removevendor",
+            "@composer install --prefer-dist --no-dev --no-progress --no-suggest --optimize-autoloader --classmap-authoritative --apcu-autoloader --ignore-platform-reqs --ansi --no-interaction",
+            "@downloadpharbuilder",
+            "@php -d phar.readonly=0 phar-builder.phar --name=ocsp-manager-${APP_VERSION:-$(git describe --exact-match --tags 2>/dev/null || git symbolic-ref --short -q HEAD)}.phar package composer.json",
+            "cp releases/ocsp-manager-${APP_VERSION:-$(git describe --exact-match --tags 2>/dev/null || git symbolic-ref --short -q HEAD)}.phar releases/docker.phar",
+            "chmod +x releases/*.phar",
+            "ls -l releases/*.phar"
+        ],
+        "removevendor": [
+            "rm -rf vendor"
+        ],
+        "downloadpharbuilder": [
+            "if [ ! -f phar-builder.phar ];then curl -o phar-builder.phar -L `curl -s https://api.github.com/repos/MacFJA/PharBuilder/releases | grep browser_download_url | head -n 1 | cut -d '\"' -f 4`;fi"
+        ],
+        "appversion": [
+            "echo ${APP_VERSION:-$(git describe --exact-match --tags 2>/dev/null || git symbolic-ref --short -q HEAD)}"
+        ]
+    },
+    "extra": {
+        "phar-builder": {
+            "compression": "BZip2",
+            "output-dir": "./releases",
+            "entry-point": "controller.php",
+            "include": [
+                "./.env.example"
+            ],
+            "include-dev": false,
+            "skip-shebang" : false
+        }
+    },
+    "require-dev": {
+        "laravel/pint": "^1.11"
+    }
+}
