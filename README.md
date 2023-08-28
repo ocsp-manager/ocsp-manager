@@ -32,11 +32,12 @@ In order to fetch an OCSP response you need 3 things:
 The logic for discovering each of the above items is:
 
 1. certificate is implicit/embedded into Kubernetes Secrets
-2. The OCSP responder URL is discovered (in order of preference) the `ocsp-responder-url` annotation as set on the
+1. The OCSP responder URL is discovered (in order of preference) via the `ocsp-responder-url` annotation as set on the
 Secret, otherwise it is pulled from data embedded in the certificate.
-3. The CA certificate data is discovered (in order of preference) the `ca-url` annotation as set on the Secret, next CA
-data is pulled from the `ca.crt` key if present in the Secret, next we check the `tls.crt` value for the full cert chain
-and pull data from there (2nd cert in the chain), lastly we fall back to the issuer URL embedded in the certificate.
+1. The CA certificate data is discovered (in order of preference) via the `ca-url` annotation as set on the Secret, next
+CA data is pulled from the `ca.crt` key if present in the Secret, next we check the `tls.crt` value for the full cert
+chain and pull data from there (2nd cert in the chain), lastly we fall back to the issuer URL embedded in the
+certificate.
 
 # env
 
@@ -97,7 +98,3 @@ docker build -t foobar .
 docker run --rm foobar
 docker run --rm -ti foobar sh
 ```
-
-# TODO
-
-- helm chart
