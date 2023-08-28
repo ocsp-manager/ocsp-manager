@@ -9,6 +9,18 @@
 [Ingress Controllers](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) etc. By default,
 responses are stored in the `tls.ocsp` key.
 
+# installation
+
+```bash
+helm repo add ocsp-manager https://ocsp-manager.github.io/charts/
+helm repo update
+
+helm upgrade --install --create-namespace -n ocsp-manager --values=values-production.yaml ocsp-manager ocsp-manager/ocsp-manager
+
+# remove
+helm -n ocsp-manager uninstall ocsp-manager
+```
+
 # operation
 
 In order to fetch an OCSP response you need 3 things:
@@ -34,7 +46,8 @@ and pull data from there (2nd cert in the chain), lastly we fall back to the iss
 - `OCSP_MANAGER_RECONCILE_INTERVAL` - maximum period of time the controller will go before performing reconciliation
 on all certs/secrets (default is 12 hours).
 - `OCSP_MANAGER_SECRET_LABEL_SELECTOR` - [Label Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors)
-for the certs/secrets to operate on. Default is blank (no filtering based on labels).
+for the certs/secrets to operate on. Default is blank (no filtering based on labels). As an example, if you wish to
+explicitly opt-in individual Secrets you could set this value to `ocsp-manager.io/enabled=true`.
 - `OCSP_MANAGER_SECRET_FIELD_SELECTOR` - [Field Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/field-selectors/)
 for the certs/secrets to operate on. Default is `type=kubernetes.io/tls`. If you override you likely want to include the
 default and add more (ie: `type=kubernetes.io/tls,metadata.namespace!=somenamespace`).
@@ -66,10 +79,15 @@ respective [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) 
 the [OCSP](https://en.wikipedia.org/wiki/Online_Certificate_Status_Protocol) response.
 
 - `response-fetch-time` - when `ocsp-manager` fetched the current OCSP data
-- `ocsp-this-update` - value of the `thisUpdate` property of the OCSP response data (ie: when was the data issued)
-- `ocsp-is-revoked` - `true` or `false` 
-- `ocsp-revoked-reason` - if revoked, the reason
+- `ocsp-this-update` - value of the `This Update` property of the OCSP response data (ie: when was the data issued)
 - `ocsp-revoked-time` - time when the revocation occurred
+
+# labels
+
+## set by `ocsp-manager`
+
+- `ocsp-is-revoked` - `true` or `false`, if present data has been fetched
+- `ocsp-revoked-reason` - if revoked, the reason
 
 # development
 

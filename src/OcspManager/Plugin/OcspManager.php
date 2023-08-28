@@ -250,9 +250,11 @@ class OcspManager extends \KubernetesController\Plugin\AbstractPlugin
                 'annotations' => [
                     Constants::ANNOTATION_PREFIX.'/response-fetch-time' => $response_fetch_time,
                     Constants::ANNOTATION_PREFIX.'/ocsp-this-update' => $this_update_time,
+                    Constants::ANNOTATION_PREFIX.'/ocsp-revoked-time' => $ocsp_revoked_time,
+                ],
+                'labels' => [
                     Constants::ANNOTATION_PREFIX.'/ocsp-is-revoked' => $ocspResponse->isRevoked() ? 'true' : 'false',
                     Constants::ANNOTATION_PREFIX.'/ocsp-revoked-reason' => $ocsp_revoked_reason,
-                    Constants::ANNOTATION_PREFIX.'/ocsp-revoked-time' => $ocsp_revoked_time,
                 ],
             ],
             'data' => [
@@ -285,6 +287,7 @@ class OcspManager extends \KubernetesController\Plugin\AbstractPlugin
             'metadata' => [
                 'name' => $secret['metadata']['name'],
                 'annotations' => [],
+                'labels' => [],
             ],
             'data' => [
                 $response_key => null,
@@ -295,12 +298,19 @@ class OcspManager extends \KubernetesController\Plugin\AbstractPlugin
         $annotations = [
             Constants::ANNOTATION_PREFIX.'/response-fetch-time',
             Constants::ANNOTATION_PREFIX.'/ocsp-this-update',
-            Constants::ANNOTATION_PREFIX.'/ocsp-is-revoked',
-            Constants::ANNOTATION_PREFIX.'/ocsp-revoked-reason',
             Constants::ANNOTATION_PREFIX.'/ocsp-revoked-time',
         ];
         foreach ($annotations as $annotation) {
             $data['metadata']['annotations'][$annotation] = null;
+        }
+
+        // remove any written labels
+        $labels = [
+            Constants::ANNOTATION_PREFIX.'/ocsp-is-revoked',
+            Constants::ANNOTATION_PREFIX.'/ocsp-revoked-reason',
+        ];
+        foreach ($labels as $label) {
+            $data['metadata']['labels'][$label] = null;
         }
 
         $endpoint = "/api/v1/namespaces/{$secret['metadata']['namespace']}/secrets/{$secret['metadata']['name']}";
