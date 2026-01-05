@@ -98,9 +98,10 @@ class OcspManager extends AbstractPlugin
      */
     public function webhookShouldProcessSecret($secret)
     {
+        $secretPath = "{$secret['metadata']['namespace']}/{$secret['metadata']['name']}";
         $key = ['data', $this->getResponseSecretKey($secret)];
         if (DotAccess::exists($secret, $key)) {
-            $this->getController()->log('webhook ignoring cert because ocsp data is already present');
+            $this->getController()->log("webhook ignoring cert {$secretPath} because ocsp data is already present");
 
             return false;
         }
@@ -112,7 +113,7 @@ class OcspManager extends AbstractPlugin
             foreach (explode(',', $params['labelSelector']) as $selector) {
                 $parts = explode('=', $selector, 2);
                 if (DotAccess::get($secret, ['metadata', 'labels', $parts[0]], null) != $parts[1]) {
-                    $this->getController()->log('webhook ignoring cert due to failed labelSelector assertion: '.$selector);
+                    $this->getController()->log("webhook ignoring cert {$secretPath} due to failed labelSelector assertion: ".$selector);
 
                     return false;
                 }
@@ -124,7 +125,7 @@ class OcspManager extends AbstractPlugin
             foreach (explode(',', $params['fieldSelector']) as $selector) {
                 $parts = explode('=', $selector, 2);
                 if (DotAccess::get($secret, $parts[0], null) != $parts[1]) {
-                    $this->getController()->log('webhook ignoring cert due to failed fieldSelector assertion: '.$selector);
+                    $this->getController()->log("webhook ignoring cert {$secretPath} due to failed fieldSelector assertion: ".$selector);
 
                     return false;
                 }
@@ -654,7 +655,7 @@ class OcspManager extends AbstractPlugin
         $data = [
             [
                 'op' => 'remove',
-                'path' => '/data/'.$response_key,
+                'path' => '/data/'.Utils::jsonPatchEncodePathSegment($response_key),
             ],
         ];
 

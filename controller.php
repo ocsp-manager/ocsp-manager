@@ -81,6 +81,7 @@ if ($webhook_enabled) {
     // https://reactphp.org/http/
     $http = new HttpServer(function (ServerRequestInterface $request) use ($controller, $plugin) {
         $controller->log("mutating webhook http {$request->getMethod()} {$request->getUri()}");
+
         //        return React\Http\Message\Response::plaintext(
         //            "Hello World!\n"
         //        );
@@ -164,7 +165,7 @@ if ($webhook_enabled) {
                             if (!empty($ocsp)) {
                                 $res['response']['patchType'] = 'JSONPatch';
                                 $patch = $plugin->getWebhookPatch($secret, $ocsp);
-                                //$controller->log("mutating webhook http patch: " . json_encode($patch, JSON_UNESCAPED_SLASHES));
+                                // $controller->log("mutating webhook http patch: " . json_encode($patch, JSON_UNESCAPED_SLASHES));
                                 $res['response']['patch'] = base64_encode(json_encode($patch, JSON_UNESCAPED_SLASHES));
                             }
 
