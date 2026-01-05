@@ -559,8 +559,9 @@ class OcspManager extends AbstractPlugin
             ],
         ];
 
-        // "~1"
         // JSONPatch formatting
+        // NOTE: a null value will be set to "" in the k8s api (ie: field will exist with a value of empty string)
+        // NOTE: add OR replace ops will both work (ie: replace will succeed even if the field is not previously present)
         if ($webhookMode) {
             return [
                 // annotations

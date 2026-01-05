@@ -84,8 +84,7 @@ if ($webhook_enabled) {
         //        return React\Http\Message\Response::plaintext(
         //            "Hello World!\n"
         //        );
-
-        switch ($request->getRequestTarget()) {
+        switch ($request->getUri()->getPath()) {
             case '/healthz':
                 return match ($request->getMethod()) {
                     'GET' => Response::json(['success' => true])->withStatus(StatusCodeInterface::STATUS_OK),
@@ -94,6 +93,7 @@ if ($webhook_enabled) {
 
             case '/webhook':
                 switch ($request->getMethod()) {
+                    // https://kubernetes.io/docs/reference/config-api/apiserver-admission.v1/#admission-k8s-io-v1-AdmissionRequest
                     case 'POST':
                         // must be json
                         if ('application/json' !== $request->getHeaderLine('Content-Type')) {
@@ -164,8 +164,8 @@ if ($webhook_enabled) {
                             if (!empty($ocsp)) {
                                 $res['response']['patchType'] = 'JSONPatch';
                                 $patch = $plugin->getWebhookPatch($secret, $ocsp);
-                                // $controller->log("mutating webhook http patch: " . json_encode($patch));
-                                $res['response']['patch'] = base64_encode(json_encode($patch));
+                                //$controller->log("mutating webhook http patch: " . json_encode($patch, JSON_UNESCAPED_SLASHES));
+                                $res['response']['patch'] = base64_encode(json_encode($patch, JSON_UNESCAPED_SLASHES));
                             }
 
                             return Response::json(
