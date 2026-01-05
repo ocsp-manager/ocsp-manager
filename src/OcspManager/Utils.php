@@ -2,16 +2,22 @@
 
 namespace OcspManager;
 
+use Ocsp\Asn1\Element\Sequence;
 use Ocsp\Asn1\UniversalTagID;
+use Ocsp\Response;
 
 class Utils
 {
+    public static function getSecretApiEndpoint($secret)
+    {
+        return "/api/v1/namespaces/{$secret['metadata']['namespace']}/secrets/{$secret['metadata']['name']}";
+    }
+
     public static function der2pem($der_data, $type = 'CERTIFICATE')
     {
         $pem = chunk_split(base64_encode($der_data), 64, "\n");
-        $pem = '-----BEGIN '.$type."-----\n".$pem.'-----END '.$type."-----\n";
 
-        return $pem;
+        return '-----BEGIN '.$type."-----\n".$pem.'-----END '.$type."-----\n";
     }
 
     public static function splitCertificateChain($crt)
@@ -28,14 +34,14 @@ class Utils
         return array_values(array_filter($crts));
     }
 
-    public static function extractSerialNumber(\Ocsp\Asn1\Element\Sequence $certificate)
+    public static function extractSerialNumber(Sequence $certificate)
     {
         $tbsCertificate = $certificate->getFirstChildOfType(UniversalTagID::SEQUENCE);
-        if ($tbsCertificate === null) {
+        if (null === $tbsCertificate) {
             return '';
         }
         $serialNumber = $tbsCertificate->getFirstChildOfType(UniversalTagID::INTEGER);
-        if ($serialNumber === null) {
+        if (null === $serialNumber) {
             return '';
         }
 
@@ -51,22 +57,28 @@ class Utils
     {
         return (clone $date)
             ->setTimezone(new \DateTimeZone('UTC'))
-            ->format('Y-m-d\TH:i:s\Z');
+            ->format('Y-m-d\TH:i:s\Z')
+        ;
+    }
+
+    public static function jsonPatchEncodePathSegment($segment)
+    {
+        return str_replace('/', '~1', $segment);
     }
 
     public static function getRevokedReasonFromCode($id): string
     {
         return match ($id) {
-            \Ocsp\Response::REVOCATIONREASON_UNSPECIFIED => 'UNSPECIFIED',
-            \Ocsp\Response::REVOCATIONREASON_KEYCOMPROMISE => 'KEYCOMPROMISE',
-            \Ocsp\Response::REVOCATIONREASON_CACOMPROMISE => 'CACOMPROMISE',
-            \Ocsp\Response::REVOCATIONREASON_AFFILIATIONCHANGED => 'AFFILIATIONCHANGED',
-            \Ocsp\Response::REVOCATIONREASON_SUPERSEDED => 'SUPERSEDED',
-            \Ocsp\Response::REVOCATIONREASON_CESSATIONOFOPERATION => 'CESSATIONOFOPERATION',
-            \Ocsp\Response::REVOCATIONREASON_CERTIFICATEHOLD => 'CERTIFICATEHOLD',
-            \Ocsp\Response::REVOCATIONREASON_REMOVEFROMCRL => 'REMOVEFROMCRL',
-            \Ocsp\Response::REVOCATIONREASON_PRIVILEGEWITHDRAWN => 'PRIVILEGEWITHDRAWN',
-            \Ocsp\Response::REVOCATIONREASON_AACOMPROMISE => 'AACOMPROMISE',
+            Response::REVOCATIONREASON_UNSPECIFIED => 'UNSPECIFIED',
+            Response::REVOCATIONREASON_KEYCOMPROMISE => 'KEYCOMPROMISE',
+            Response::REVOCATIONREASON_CACOMPROMISE => 'CACOMPROMISE',
+            Response::REVOCATIONREASON_AFFILIATIONCHANGED => 'AFFILIATIONCHANGED',
+            Response::REVOCATIONREASON_SUPERSEDED => 'SUPERSEDED',
+            Response::REVOCATIONREASON_CESSATIONOFOPERATION => 'CESSATIONOFOPERATION',
+            Response::REVOCATIONREASON_CERTIFICATEHOLD => 'CERTIFICATEHOLD',
+            Response::REVOCATIONREASON_REMOVEFROMCRL => 'REMOVEFROMCRL',
+            Response::REVOCATIONREASON_PRIVILEGEWITHDRAWN => 'PRIVILEGEWITHDRAWN',
+            Response::REVOCATIONREASON_AACOMPROMISE => 'AACOMPROMISE',
             default => "UNKNOWN ID: {$id}",
         };
     }

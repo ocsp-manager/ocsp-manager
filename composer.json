@@ -18,7 +18,8 @@
         "mlocati/ocsp": "^1.1",
         "guzzlehttp/guzzle": "^7.0",
         "cash/lrucache": "^1.0",
-        "vlucas/phpdotenv": "^5.5"
+        "vlucas/phpdotenv": "^5.5",
+        "react/http": "^1.11"
     },
     "autoload": {
         "psr-0": {"OcspManager\\": "src/"}
@@ -56,6 +57,7 @@
         }
     },
     "require-dev": {
-        "laravel/pint": "^1.11"
+        "laravel/pint": "^1.11",
+        "friendsofphp/php-cs-fixer": "^3.92"
     }
 }

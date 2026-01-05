@@ -15,6 +15,7 @@ responses are stored in the `tls.ocsp` key.
 helm repo add ocsp-manager https://ocsp-manager.github.io/charts/
 helm repo update
 
+# https://github.com/ocsp-manager/charts/blob/main/stable/ocsp-manager/values.yaml
 helm upgrade --install --create-namespace -n ocsp-manager --values=values-production.yaml ocsp-manager ocsp-manager/ocsp-manager
 
 # remove
@@ -42,7 +43,7 @@ certificate.
 # env
 
 - `OCSP_MANAGER_DEFAULT_RESPONSE_SECRET_KEY` - used to override the default of `tls.ocsp`
-- `OCSP_MANAGER_REFRESH_INTERVAL` - period of time after `thisUpdate` that the OCSP data should be considered stale
+- `OCSP_MANAGER_REFRESH_INTERVAL` - period of time after `This Update` that the OCSP data should be considered stale
 (defaults to 3 days), in practical terms this cannot be less than the reconcile interval for the controller
 - `OCSP_MANAGER_RECONCILE_INTERVAL` - maximum period of time the controller will go before performing reconciliation
 on all certs/secrets (default is 12 hours).
@@ -68,7 +69,7 @@ behaves.
 
 - `response-key` - the name of the key in the secret where the OCSP data should be stored (default is 
 `OCSP_MANAGER_DEFAULT_RESPONSE_SECRET_KEY` env value or `tls.ocsp`)
-- `refresh-interval` - period of time after `thisUpdate` that the OCSP data should be considered stale (defaults to 3
+- `refresh-interval` - period of time after `This Update` that the OCSP data should be considered stale (defaults to 3
 days), in practical terms this cannot be less than the reconcile interval for the controller
 - `ocsp-responder-url` - explicitly set the responder URL (generally this is pulled from the certificate data)
 - `ca-url` - explicitly set the CA URL
@@ -97,4 +98,7 @@ composer run-script buildphar
 docker build -t foobar .
 docker run --rm foobar
 docker run --rm -ti foobar sh
+
+# inspect ocsp binary data
+openssl ocsp -respin dev/ocsp-binary-sample -text
 ```
