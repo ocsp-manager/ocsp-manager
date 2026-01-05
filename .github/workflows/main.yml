@@ -41,7 +41,7 @@ jobs:
       - name: application build
         uses: php-actions/composer@v6
         with:
-          php_version: "8.2"
+          php_version: "8.5"
           php_extensions: pcntl bz2 bcmath
           command: buildphar
 
