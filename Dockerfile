@@ -1,7 +1,7 @@
-# docker run --rm -ti --entrypoint /bin/sh php:8.5-cli-alpine
+# docker run --rm -ti --entrypoint /bin/sh php:8.5.13-cli-alpine3.24
 # docker run --rm -ti --entrypoint /bin/sh foobar
 # docker build -t foobar -f Dockerfile .
-FROM php:8.5-cli-alpine
+FROM php:8.5.13-cli-alpine3.24
 
 LABEL org.opencontainers.image.source https://github.com/ocsp-manager/ocsp-manager
 LABEL org.opencontainers.image.url https://github.com/ocsp-manager/ocsp-manager
