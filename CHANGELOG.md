@@ -1,3 +1,10 @@
+# v0.3.1
+
+Released 2026-11-20
+
+- fix `Undefined array key "name"` warnings in the webhook when a Secret is created with `metadata.generateName` (logged
+  as `namespace/generateName*`)
+
 # v0.3.0
 
 Released 2026-11-19

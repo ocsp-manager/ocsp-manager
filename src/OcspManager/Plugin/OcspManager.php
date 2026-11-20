@@ -98,7 +98,7 @@ class OcspManager extends AbstractPlugin
      */
     public function webhookShouldProcessSecret($secret)
     {
-        $secretPath = "{$secret['metadata']['namespace']}/{$secret['metadata']['name']}";
+        $secretPath = Utils::getSecretPath($secret);
         $key = ['data', $this->getResponseSecretKey($secret)];
         if (DotAccess::exists($secret, $key)) {
             $this->getController()->log("webhook ignoring cert {$secretPath} because ocsp data is already present");
@@ -155,7 +155,7 @@ class OcspManager extends AbstractPlugin
      */
     public function handleSecret($secret, $webhookMode = false)
     {
-        $secretPath = "{$secret['metadata']['namespace']}/{$secret['metadata']['name']}";
+        $secretPath = Utils::getSecretPath($secret);
         $this->log("handling secret: {$secretPath}");
 
         // ignore secrets without a crt
@@ -507,7 +507,7 @@ class OcspManager extends AbstractPlugin
      */
     private function setSecretOCSPResponse($secret, $ocsp, $webhookMode = false)
     {
-        $secretPath = "{$secret['metadata']['namespace']}/{$secret['metadata']['name']}";
+        $secretPath = Utils::getSecretPath($secret);
         $client = $this->getController()->getKubernetesClient();
 
         if (empty($ocsp)) {
@@ -537,6 +537,28 @@ class OcspManager extends AbstractPlugin
         }
 
         $fetched_ocsp_data = base64_encode((string) $ocsp);
+
+        // JSONPatch formatting
+        // NOTE: a null value will be set to "" in the k8s api (ie: field will exist with a value of empty string)
+        // NOTE: add OR replace ops will both work (ie: replace will succeed even if the field is not previously present)
+        if ($webhookMode) {
+            return [
+                // annotations
+                ['op' => 'add', 'path' => '/metadata/annotations/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/response-fetch-time'), 'value' => $response_fetch_time],
+                ['op' => 'add', 'path' => '/metadata/annotations/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-this-update'), 'value' => $this_update_time],
+                ['op' => 'add', 'path' => '/metadata/annotations/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-next-update'), 'value' => $next_update_time],
+                ['op' => 'add', 'path' => '/metadata/annotations/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-revoked-time'), 'value' => $ocsp_revoked_time],
+
+                // labels
+                ['op' => 'add', 'path' => '/metadata/labels/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-is-revoked'), 'value' => $ocspResponse->isRevoked() ? 'true' : 'false'],
+                ['op' => 'add', 'path' => '/metadata/labels/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-revoked-reason'), 'value' => $ocsp_revoked_reason],
+                ['op' => 'add', 'path' => '/metadata/labels/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/cert-serial-number'), 'value' => $ocspResponse->getCertificateSerialNumber()],
+
+                // ocsp
+                ['op' => 'add', 'path' => '/data/'.Utils::jsonPatchEncodePathSegment($response_key), 'value' => $fetched_ocsp_data],
+            ];
+        }
+
         // patch data
         $data = [
             'kind' => 'Secret',
@@ -559,27 +581,6 @@ class OcspManager extends AbstractPlugin
                 $response_key => $fetched_ocsp_data,
             ],
         ];
-
-        // JSONPatch formatting
-        // NOTE: a null value will be set to "" in the k8s api (ie: field will exist with a value of empty string)
-        // NOTE: add OR replace ops will both work (ie: replace will succeed even if the field is not previously present)
-        if ($webhookMode) {
-            return [
-                // annotations
-                ['op' => 'add', 'path' => '/metadata/annotations/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/response-fetch-time'), 'value' => $response_fetch_time],
-                ['op' => 'add', 'path' => '/metadata/annotations/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-this-update'), 'value' => $this_update_time],
-                ['op' => 'add', 'path' => '/metadata/annotations/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-next-update'), 'value' => $next_update_time],
-                ['op' => 'add', 'path' => '/metadata/annotations/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-revoked-time'), 'value' => $ocsp_revoked_time],
-
-                // labels
-                ['op' => 'add', 'path' => '/metadata/labels/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-is-revoked'), 'value' => $ocspResponse->isRevoked() ? 'true' : 'false'],
-                ['op' => 'add', 'path' => '/metadata/labels/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/ocsp-revoked-reason'), 'value' => $ocsp_revoked_reason],
-                ['op' => 'add', 'path' => '/metadata/labels/'.Utils::jsonPatchEncodePathSegment(Constants::ANNOTATION_PREFIX.'/cert-serial-number'), 'value' => $ocspResponse->getCertificateSerialNumber()],
-
-                // ocsp
-                ['op' => 'add', 'path' => '/data/'.Utils::jsonPatchEncodePathSegment($response_key), 'value' => $fetched_ocsp_data],
-            ];
-        }
 
         if (isset($secret['data'][$response_key]) && $secret['data'][$response_key] == $fetched_ocsp_data) {
             $this->log("OCSP data already current, you should consider modifying the refresh-interval, ignoring update: {$secretPath}");
@@ -647,7 +648,7 @@ class OcspManager extends AbstractPlugin
      */
     private function removeSecretOCSPResponseData($secret): void
     {
-        $secretPath = "{$secret['metadata']['namespace']}/{$secret['metadata']['name']}";
+        $secretPath = Utils::getSecretPath($secret);
         $client = $this->getController()->getKubernetesClient();
         $response_key = $this->getResponseSecretKey($secret);
 

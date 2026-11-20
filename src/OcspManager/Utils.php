@@ -13,6 +13,15 @@ class Utils
         return "/api/v1/namespaces/{$secret['metadata']['namespace']}/secrets/{$secret['metadata']['name']}";
     }
 
+    public static function getSecretPath($secret)
+    {
+        $namespace = $secret['metadata']['namespace'] ?? '';
+        // secrets created with generateName do not have a name assigned yet during admission
+        $name = $secret['metadata']['name'] ?? (isset($secret['metadata']['generateName']) ? $secret['metadata']['generateName'].'*' : '');
+
+        return "{$namespace}/{$name}";
+    }
+
     public static function der2pem($der_data, $type = 'CERTIFICATE')
     {
         $pem = chunk_split(base64_encode($der_data), 64, "\n");
